@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit Profile</title>
+
+<style>
+/* --- Global Reset --- */
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
+/* --- Layout --- */
+body {
+  display: flex;
+  height: 100vh;
+  background: #e9e9eb;
+  overflow: hidden;
+
+}
+
+
+/* 🌿 Sidebar */
+.sidebar {
+  width: 240px;
+  background: rgb(54, 52, 52);
+  border-right: 1px solid #e6e6e6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 30px 20px;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+}
+
+.sidebar h2 {
+  color: #1c0ccd;
+  font-size: 22px;
+  margin-bottom: 25px;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  border-radius: 8px;
+  background-color: white;
+}
+
+.sidebar a {
+  text-decoration: none;
+  color: white;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  background: #f0efff;
+  color: black;
+}
+
+.sidebar .logout {
+  margin-top: auto;
+  background: #1c0ccd;
+  color: #fff;
+  justify-content: center;
+}
+
+.sidebar .logout:hover {
+  background: #10b63f;
+  color:#fff;
+}
+
+
+/* ✅ Card Container */
+.card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  width: 420px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-left: 30%;
+}
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* ✅ Profile Image */
+img.profile-pic {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border: 3px solid #1c0ccd;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ✅ Headings */
+h2 {
+  color: #1c0ccd;
+  margin-bottom: 15px;
+}
+
+/* ✅ Inputs */
+input[type="text"],
+input[type="email"],
+input[type="date"],
+input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: 0.3s ease;
+  background-color: #fafafa;
+}
+input:focus {
+  border-color: #1c0ccd;
+  box-shadow: 0 0 6px rgba(28, 12, 205, 0.3);
+}
+
+/* ✅ Buttons */
+button {
+  width: 48%;
+  padding: 10px;
+  margin: 10px 1%;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.update-btn {
+  background: #1c0ccd;
+  color: white;
+}
+.update-btn:hover {
+  background: #10b63f;
+  transform: scale(1.05);
+}
+
+.remove-btn {
+  background: #ff3b3b;
+  color: white;
+}
+.remove-btn:hover {
+  background: #e62e2e;
+  transform: scale(1.05);
+}
+
+
+
+/* ✅ Responsive */
+@media (max-width: 480px) {
+  .card {
+    width: 90%;
+    padding: 30px;
+  }
+}
+</style>
+</head>
+
+<body>
+  <!-- ✅ Sidebar -->
+<div class="sidebar">
+  <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
+  <a href="{{ url_for('edit_profile')}}">👤 Edit Profile</a>
+  <a href="{{ url_for('change_password')}}">🔒 Change Password</a>
+  <a href="{{ url_for('login') }}" class="logout">Logout</a>
+</div>
+
+
+  <div class="card">
+    <h2>Edit Profile</h2>
+
+    {% if user.profile_pic %}
+      <img class="profile-pic" src="/static/uploads/{{ user.profile_pic }}" alt="Profile Picture">
+    {% else %}
+      <img class="profile-pic" src="https://via.placeholder.com/100" alt="Default Profile">
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+      <input type="text" name="username" value="{{ user.username }}" required>
+      <input type="email" name="email" value="{{ user.email }}" required>
+      <input type="date" name="dob" value="{{ user.date_of_birth }}" required>
+      <input type="file" name="profile_pic" accept="image/*">
+
+      <button type="submit" class="update-btn">Update Profile</button>
+      <button type="submit" name="remove_pic" class="remove-btn">Remove Picture</button>
+    </form>
+
+    <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+  </div>
+</body>
+</html>

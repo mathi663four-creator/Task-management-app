@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Edit User (Admin)</title>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+body {
+  background: #f5f7fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.card {
+  background: #fff;
+  padding: 40px;
+  border-radius: 20px;
+  width: 430px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+h2 { color: #1c0ccd; margin-bottom: 15px; }
+input, select {
+  width: 100%; padding: 12px; margin: 8px 0;
+  border: 1px solid #ccc; border-radius: 10px; font-size: 14px;
+  background-color: #fafafa; transition: 0.3s;
+}
+input:focus, select:focus {
+  border-color: #1c0ccd;
+  box-shadow: 0 0 6px rgba(28,12,205,0.3);
+}
+img.profile-pic {
+  width: 110px; height: 110px; border-radius: 50%;
+  object-fit: cover; border: 3px solid #1c0ccd;
+  margin-bottom: 10px;
+}
+button {
+  width: 48%; padding: 10px; border: none;
+  border-radius: 8px; font-weight: bold; cursor: pointer;
+  transition: 0.3s ease;
+}
+.update-btn { background: #1c0ccd; color: white; }
+.update-btn:hover { background: #10b63f; transform: scale(1.05); }
+.remove-btn { background: #e53935; color: white; }
+.remove-btn:hover { background: #c62828; transform: scale(1.05); }
+a {
+  display: inline-block; margin-top: 15px; text-decoration: none;
+  color: #1c0ccd; font-weight: 500;
+}
+a:hover { text-decoration: underline; color: #10b63f; }
+</style>
+</head>
+
+<body>
+  <div class="card">
+    <h2>Edit User</h2>
+
+    {% if user.profile_pic %}
+      <img class="profile-pic" src="/static/uploads/{{ user.profile_pic }}" alt="Profile Picture">
+    {% else %}
+      <img class="profile-pic" src="https://via.placeholder.com/100" alt="Default Profile">
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+      <input type="text" name="username" value="{{ user.username }}" placeholder="Username" required>
+      <input type="email" name="email" value="{{ user.email }}" placeholder="Email" required>
+      <input type="tel" name="mobile" value="{{ user.mobile }}" placeholder="Mobile Number" required>
+      <input type="date" name="dob" value="{{ user.date_of_birth }}" required>
+
+      <select name="role" required>
+        <option value="user" {% if user.role == 'user' %}selected{% endif %}>User</option>
+        <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+      </select>
+
+      <input type="file" name="profile_pic" accept="image/*">
+
+      <div style="display:flex; justify-content:space-between;">
+        <button type="submit" class="update-btn">Update</button>
+        <button type="submit" name="remove_pic" class="remove-btn">Remove</button>
+      </div>
+    </form>
+
+    <a href="{{ url_for('admin_dashboard') }}">← Back to Admin Dashboard</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+
+<style>
+/* 🌿 Global Reset */
+* { margin:0; padding:0; box-sizing:border-box; font-family:"Poppins", sans-serif; }
+
+/* 🌿 Page Layout */
+body { display:flex;
+   height:100vh;
+   background:#e9e9eb; 
+   overflow:hidden; }
+
+/* 🌿 Sidebar */
+.sidebar {
+  width:240px; 
+  background:rgb(54, 52, 52); 
+  border-right:1px solid #e6e6e6;
+  display:flex; 
+  flex-direction:column; 
+  align-items:flex-start;
+  padding:30px 20px; 
+  box-shadow:2px 0 10px rgba(0,0,0,0.05);
+}
+.sidebar h2 { color:#1c0ccd; 
+  font-size:22px; 
+  margin-bottom:25px; 
+  font-weight:700; 
+  text-align:center; 
+  width:100%;
+  border-radius: 8px;
+  background-color: white; }
+
+.sidebar a { text-decoration:none; 
+  color:white; 
+  width:100%; 
+  display:flex; 
+  align-items:center; 
+  gap:10px; 
+  padding:12px 15px; 
+  border-radius:8px; 
+  font-weight:500; 
+  transition:0.3s; }
+
+.sidebar a:hover { background:#f0efff;color: black; 
+   }
+
+.sidebar .logout { margin-top:auto; 
+  background:#1c0ccd; 
+  color:#fff; 
+  justify-content:center; }
+
+.sidebar .logout:hover { background:#1c0ccd; 
+  color:#fff; }
+
+/* 🌿 Main Content */
+.main-content { flex:1; 
+  padding:35px; 
+  overflow-y:auto; }
+
+/* 🌿 Top Bar */
+.top-bar { display:flex; 
+  justify-content:space-between; 
+  align-items:center; 
+  margin-bottom:30px; }
+
+.top-bar h1 { font-size:26px; 
+  color:#333; }
+.top-bar span { color:#5e5ce6; 
+  font-weight:600; }
+
+/* 🌿 Profile Card */
+.profile-card { background:#fff; 
+  border-radius:16px; 
+  padding:25px; 
+  box-shadow:0 2px 10px rgba(0,0,0,0.05); 
+  margin-bottom:25px; 
+  display:flex; 
+  flex-direction:column; 
+  align-items:center; }
+
+.profile-card img { width:90px; 
+  height:90px; 
+  border-radius:50%; 
+  border:3px solid #5e5ce6; 
+  margin-bottom:10px; 
+  object-fit:cover; }
+
+.profile-card h2 { color:#5e5ce6; 
+  margin-bottom:5px; }
+
+.profile-card .info { background:#fafaff; 
+  border-radius:10px; 
+  padding:15px; 
+  font-size:20px; 
+  color:#444; }
+
+.profile-card .info p { margin:6px 0; }
+
+.profile-card a { color:red; 
+  font-size:13px; 
+  text-decoration:none; }
+
+.profile-card a:hover { text-decoration:underline; }
+
+/* ✅ Task Button */
+.task-btn-container { display:flex; 
+  justify-content:center; 
+  margin:20px 0 30px; }
+
+.show-task-btn { background:#5e5ce6; 
+  color:white; 
+  border:none; 
+  padding:12px 20px; 
+  border-radius:10px; 
+  font-size:15px; 
+  cursor:pointer; 
+  transition:0.3s; }
+
+.show-task-btn:hover { background:#10b63f; 
+  transform:scale(1.05); }
+
+/* 🌿 Task Board / Kanban */
+.taskboard { display:none; 
+  background:#fff; 
+  border-radius:16px; 
+  padding:25px; 
+  box-shadow:0 2px 10px rgba(0,0,0,0.05); 
+  margin-top:20px; }
+
+.kanban-container { display:flex; 
+  gap:20px; 
+  justify-content:space-between; 
+  flex-wrap:wrap; }
+
+.kanban-column { flex:1; 
+  min-width:280px; 
+  background:#f8f8ff; 
+  border-radius:12px; 
+  padding:10px; }
+
+.kanban-column h4 { background:#5e5ce6; 
+  color:#fff; 
+  text-align:center; 
+  padding:8px; 
+  border-radius:8px; 
+  margin-bottom:10px; 
+  cursor:pointer; 
+  transition:0.3s; }
+
+.kanban-column h4:hover { background:#10b63f; }
+
+.task-card { background:#fff; 
+  border-left:5px solid #5e5ce6; 
+  border-radius:10px; 
+  padding:10px; 
+  margin:8px 0; 
+  box-shadow:0 2px 6px rgba(0,0,0,0.05); 
+  transition:all 0.4s ease; 
+  opacity:0; 
+  transform:translateY(15px); 
+  animation:fadeUp 0.5s ease forwards; }
+
+.task-card:hover { transform:translateY(-6px) scale(1.02); 
+  box-shadow:0 8px 20px rgba(115,103,240,0.2); 
+  border-left-color:#10b63f; }
+
+.task-card strong { color:#5e5ce6; 
+  display:block; }
+
+.task-card small { color:#555; 
+  display:block; 
+  font-size:13px; }
+
+.time-stamp { text-align:right; 
+  color:#888; 
+  font-size:11px; 
+  font-style:italic; 
+  margin-top:4px; }
+
+.profile-sidebar {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.profile-sidebar {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.sidebar-pic {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #10b63f;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-pic:hover {
+  transform: scale(1.05);
+}
+
+.sidebar h1{
+  color:white
+}
+
+
+
+
+@keyframes fadeUp { to { opacity:1; 
+  transform:translateY(0); } }
+
+/* 🌿 Responsive */
+@media (max-width:900px){ body{flex-direction:column;} .sidebar{flex-direction:row;width:100%;height:auto;justify-content:space-around;padding:15px;} .main-content{padding:20px;} .kanban-container{flex-direction:column;} }
+</style>
+</head>
+
+<body>
+
+<!-- 🌿 Sidebar -->
+<div class="sidebar">
+  <h2> User Dashboard</h2>
+  <div class="profile-sidebar">
+    {% if user.profile_pic %}
+      <img src="/static/uploads/{{ user.profile_pic }}" alt="Profile Picture" class="sidebar-pic">
+    {% else %}
+      <img src="https://via.placeholder.com/100" alt="Default Profile" class="sidebar-pic">
+    {% endif %}
+    <h1>{{ user.username }} </h1>
+  </div>
+  
+  <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
+  <a href="{{ url_for('edit_profile') }}">👤 Edit Profile</a>
+  <a href="{{ url_for('change_password') }}">🔒 Change Password</a>
+  {% if user.role == 'admin' %}
+    <a href="{{ url_for('admin_dashboard') }}">🛠️ Admin Panel</a>
+  {% endif %}
+  <a href="{{ url_for('login') }}" class="logout">Logout</a>
+</div>
+
+<!-- 🌿 Main Content -->
+<div class="main-content">
+  <div class="top-bar">
+    <h1>Welcome back, <span>{{ user.username }}</span> 👋</h1>
+  </div>
+
+  <!-- Profile Card -->
+  <div class="profile-card">
+    {% if user.profile_pic %}
+      <img src="/static/uploads/{{ user.profile_pic }}" alt="Profile Picture">
+    {% else %}
+      <img src="https://via.placeholder.com/100" alt="Default Profile">
+    {% endif %}
+    <h2>{{ user.username }}</h2>
+    <div class="info">
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <p><strong>Mobile:</strong> {{ user.mobile }}</p>
+      <p><strong>Date of Birth:</strong> {{ user.date_of_birth }}</p>
+      <p><strong>Age:</strong> {{ age }} years</p>
+      {% if user.role != 'admin' %}
+        <p><strong>Role:</strong> User</p>
+        <a href="{{ url_for('request_permission') }}">Request Admin Access</a>
+      {% else %}
+        <p style="color:#10b63f;font-weight:bold;">✓ Admin Access Granted</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ✅ Show Tasks Button -->
+<div class="task-btn-container">
+  <a href="{{ url_for('user_tasks') }}" >
+    <button class="show-task-btn">Show Tasks</button>
+  </a>
+</div>
+  
+
+</div>
+</body>
+</html>

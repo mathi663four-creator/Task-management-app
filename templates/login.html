@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="shortcut icon" href="/static/icon/login.png" type="image/x-icon">
+
+<!-- ✅ SweetAlert2 Library -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+body {
+  display: flex;
+  height: 100vh;
+  background: #f7f8fa;
+}
+
+/* ✅ Left Section - Illustration */
+.left-section {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.left-section img {
+  width: 90%;
+  max-width: 600px;
+}
+
+/* ✅ Right Section - Login Form */
+.right-section {
+  flex: 0.9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.1);
+}
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+.login-card h2 {
+  font-size: 26px;
+  color: #4b4b4b;
+  margin-bottom: 8px;
+}
+.login-card p {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  background: #f9f9f9;
+  transition: 0.3s ease;
+}
+input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 6px rgba(108, 99, 255, 0.3);
+  background: #fff;
+}
+
+.login-btn {
+  background: #6c63ff;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.3s ease;
+}
+.login-btn:hover {
+  background: #10b63f;
+  transform: scale(1.03);
+}
+
+.extra-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  font-size: 14px;
+}
+.extra-links a {
+  color: #6c63ff;
+  text-decoration: none;
+}
+.extra-links a:hover {
+  text-decoration: underline;
+}
+
+/* ✅ Password rules */
+#password-rules {
+  background: #f7f7f7;
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+  border-radius: 8px;
+  margin-top: 5px;
+  display: none;
+}
+#password-rules p {
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+@media(max-width: 900px) {
+  body { flex-direction: column; }
+  .left-section { display: none; }
+  .right-section { flex: 1; box-shadow: none; }
+}
+</style>
+</head>
+
+<body>
+  <!-- ✅ Left Side Illustration -->
+  <div class="left-section">
+    <img src="https://i.pinimg.com/736x/ba/80/48/ba8048885141d17deaa2a734dbf83ce8.jpg" alt="Login Illustration">
+  </div>
+
+  <!-- ✅ Right Side Login Form -->
+  <div class="right-section">
+    <div class="login-card">
+      <h2>Welcome Back 👋</h2>
+      <p>Please sign in to continue</p>
+
+      {% if message %}
+      <script>
+      Swal.fire({
+        icon: '{{ "success" if alert == "success" else "error" }}',
+        title: '{{ message }}',
+        timer: 2000,
+        showConfirmButton: false
+      });
+      </script>
+      {% endif %}
+
+      <form method="post" onsubmit="return validateLogin();">
+        <label><b>Mobile Number</b></label>
+        <input type="tel" id="mobile" name="mobile" placeholder="📱 Enter your mobile number" maxlength="10" required>
+
+        <label><b>Password</b></label>
+        <input type="password" id="password" name="password" placeholder="🔐 Enter your password" required>
+
+        <div id="password-rules">
+          <p id="rule1">• At least 8 characters</p>
+          <p id="rule2">• At least 1 uppercase letter</p>
+          <p id="rule3">• At least 1 number</p>
+          <p id="rule4">• At least 1 special character (@$!%*?&)</p>
+        </div>
+
+        <button type="submit" class="login-btn">Sign In</button>
+      </form>
+
+      <div class="extra-links">
+        <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+        <a href="{{ url_for('register') }}">New User?</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ✅ MOBILE VALIDATION
+const mobileInput = document.getElementById('mobile');
+mobileInput.addEventListener('input', () => {
+  let val = mobileInput.value.replace(/[^0-9]/g, '');
+  if (val.length === 1 && !/[6-9]/.test(val[0])) val = '';
+  mobileInput.value = val.slice(0, 10);
+});
+
+// ✅ PASSWORD VALIDATION
+const passInput = document.getElementById("password");
+const rulesBox = document.getElementById("password-rules");
+const rule1 = document.getElementById("rule1");
+const rule2 = document.getElementById("rule2");
+const rule3 = document.getElementById("rule3");
+const rule4 = document.getElementById("rule4");
+
+passInput.addEventListener("focus", () => { rulesBox.style.display = "block"; });
+passInput.addEventListener("input", () => {
+  const val = passInput.value;
+  const cond1 = val.length >= 8;
+  const cond2 = /[A-Z]/.test(val);
+  const cond3 = /\d/.test(val);
+  const cond4 = /[@$!%*?&]/.test(val);
+  rule1.style.display = cond1 ? "none" : "block";
+  rule2.style.display = cond2 ? "none" : "block";
+  rule3.style.display = cond3 ? "none" : "block";
+  rule4.style.display = cond4 ? "none" : "block";
+  rulesBox.style.display = (cond1 && cond2 && cond3 && cond4) ? "none" : "block";
+});
+
+// ✅ FORM VALIDATION with SweetAlert2
+function validateLogin() {
+  const mobile = mobileInput.value;
+  if (!/^[6-9]\d{9}$/.test(mobile)) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Invalid Mobile Number',
+      text: 'Mobile number must start with 6–9 and have 10 digits.',
+      confirmButtonColor: '#6c63ff'
+    });
+    return false;
+  }
+
+  const val = passInput.value;
+  const strong = val.length >= 8 && /[A-Z]/.test(val) && /\d/.test(val) && /[@$!%*?&]/.test(val);
+  if (!strong) {
+    Swal.fire({
+      icon: 'error',
+      text: 'Password must meet all the conditions!',
+      confirmButtonColor: '#6c63ff'
+    });
+    return false;
+  }
+
+  return true;
+}
+</script>
+
+</body>
+</html>

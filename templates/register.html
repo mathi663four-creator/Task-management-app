@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Account</title>
+<link rel="shortcut icon" href="/static/icon/add.png" type="image/x-icon">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+body { display: flex; height: 100vh; background: #f7f8fa; }
+
+/* ✅ Left Section - Illustration */
+.left-section {
+  flex: 1;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.left-section img {
+  width: 900%;
+  max-width: 600px;
+}
+
+/* ✅ Right Section - Register Form */
+.right-section {
+  flex: 0.9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
+}
+
+h2 {
+  color: #4b4b4b;
+  font-size: 26px;
+  margin-bottom: 8px;
+}
+h3 {
+  color: #6c63ff;
+  font-size: 20px;
+  margin-bottom: 25px;
+}
+.message { margin-top: 10px; font-size: 14px; font-weight: bold; }
+.success { color: green; } 
+.error { color: red; }
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  outline: none;
+  font-size: 14px;
+  background: #f9f9f9;
+  transition: 0.3s ease;
+}
+input:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 6px rgba(108, 99, 255, 0.3);
+  background: #fff;
+}
+
+.register-btn {
+  background: #6c63ff;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.3s ease;
+}
+.register-btn:hover {
+  background: #5a54e3;
+}
+
+/* ✅ Password rules box */
+#password-rules {
+  background: #f7f7f7;
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+  border-radius: 8px;
+  margin-top: 5px;
+  display: none;
+}
+#password-rules p {
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.login-link {
+  display: block;
+  margin-top: 15px;
+  font-size: 14px;
+  text-align: center;
+}
+.login-link a {
+  color: #6c63ff;
+  text-decoration: none;
+}
+.login-link a:hover {
+  text-decoration: underline;
+}
+
+@media(max-width: 900px) {
+  body { flex-direction: column; }
+  .left-section { display: none; }
+  .right-section { flex: 1; box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ✅ Left Illustration -->
+<div class="left-section">
+  <img src="https://i.pinimg.com/736x/bd/a3/17/bda3177a3943ffdbcc652b3a678a0d74.jpg" alt="Register Illustration">
+</div>
+
+<!-- ✅ Right Form Section -->
+<div class="right-section">
+  <div class="card">
+    <h2>Welcome 🥳</h2>
+    <h3>Create your Account</h3>
+
+    {% if message %}
+      <p class="message {{ alert }}">{{ message }}</p>
+    {% endif %}
+
+    <form action="{{ url_for('register') }}" method="post" enctype="multipart/form-data" onsubmit="return validateBeforeSubmit();">
+      <input type="text" name="username" placeholder="🧍 Username" required>
+      <input type="email" name="email" placeholder="📧 Your Email" required>
+      <input type="tel" id="mobile" name="mobile" placeholder="📱 Mobile Number" maxlength="10" required>
+
+      <input type="password" id="password" name="password" placeholder="🔐 Password" required>
+      <div id="password-rules">
+        <p id="rule1">• At least 8 characters</p>
+        <p id="rule2">• At least 1 uppercase letter</p>
+        <p id="rule3">• At least 1 number</p>
+        <p id="rule4">• At least 1 special character (@$!%*?&)</p>
+      </div>
+
+      <input type="password" name="confirm_password" placeholder="🔐 Confirm Password" required>
+      <input type="date" name="dob" placeholder="Date of Birth" required>
+
+      <button type="submit" class="register-btn">Register</button>
+    </form>
+
+    <p class="login-link">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+  </div>
+</div>
+
+<script>
+// ✅ MOBILE VALIDATION
+const mobileInput = document.getElementById('mobile');
+mobileInput.addEventListener('input', () => {
+  let val = mobileInput.value.replace(/[^0-9]/g, '');
+  if (val.length === 1 && !/[6-9]/.test(val[0])) val = '';
+  mobileInput.value = val.slice(0, 10);
+});
+
+// ✅ PASSWORD VALIDATION
+const passInput = document.getElementById("password");
+const rulesBox = document.getElementById("password-rules");
+const rule1 = document.getElementById("rule1");
+const rule2 = document.getElementById("rule2");
+const rule3 = document.getElementById("rule3");
+const rule4 = document.getElementById("rule4");
+
+passInput.addEventListener("focus", () => { rulesBox.style.display = "block"; });
+passInput.addEventListener("input", () => {
+  const val = passInput.value;
+  const cond1 = val.length >= 8;
+  const cond2 = /[A-Z]/.test(val);
+  const cond3 = /\d/.test(val);
+  const cond4 = /[@$!%*?&]/.test(val);
+  rule1.style.display = cond1 ? "none" : "block";
+  rule2.style.display = cond2 ? "none" : "block";
+  rule3.style.display = cond3 ? "none" : "block";
+  rule4.style.display = cond4 ? "none" : "block";
+  rulesBox.style.display = (cond1 && cond2 && cond3 && cond4) ? "none" : "block";
+});
+
+function validateBeforeSubmit() {
+  const val = passInput.value;
+  const strong = val.length >= 8 && /[A-Z]/.test(val) && /\d/.test(val) && /[@$!%*?&]/.test(val);
+  if (!strong) {
+    alert("⚠️ Password must meet all the conditions!");
+    return false;
+  }
+  const mobile = mobileInput.value;
+  if (!/^[6-9]\d{9}$/.test(mobile)) {
+    alert("⚠️ Mobile number must start with 6–9 and have 10 digits.");
+    return false;
+  }
+  return true;
+}
+</script>
+
+</body>
+</html>

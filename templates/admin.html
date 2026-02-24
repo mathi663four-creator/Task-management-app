@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Dashboard</title>
+
+<!-- ✅ DataTables + Chart.js -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+*{
+  box-sizing:border-box;
+  font-family:Poppins,Arial,Helvetica,sans-serif
+}
+body{margin:0;background:#e9e9eb;
+  color:#222
+}
+.app{
+  display:flex;min-height:100vh
+}
+.sidebar{
+  width:250px;
+  background:rgb(54, 52, 52);
+  color:#fff;padding:26px;
+  position:fixed;
+  top:0;
+  left:0;bottom:0
+}
+.sidebar nav a{
+  color:#e6e6e6;
+  text-decoration:none;
+  display:block;
+  padding:10px;
+  border-radius:8px;
+  margin:6px 0
+}
+.sidebar nav a:hover{
+  background:#f0efff;
+  color: black;
+
+}
+
+.sidebar .logout { margin-top:220%; 
+  background:#1c0ccd; 
+  color:#fff; 
+  text-align:center; }
+
+.sidebar .logout:hover { background:#10b63f; 
+  color:#fff; }
+
+.main{
+  margin-left:270px;
+  padding:28px;
+  flex:1
+}
+h1{
+  color:#5a54e3;
+  margin-top:0
+}
+.cards{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:18px
+}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:16px;
+  box-shadow:0 6px 18px rgba(33,37,78,0.06);
+  flex:1;
+  min-width:180px
+}
+.card h4{
+  margin:0;
+  color:#5a54e3
+}
+.card .stat{
+  font-size:24px;
+  font-weight:700;
+  margin-top:6px
+}
+.table-card{
+  background:#fff;
+  border-radius:12px;
+  padding:14px;
+  box-shadow:0 6px 18px rgba(33,37,78,0.06)
+  
+}
+
+.avatar{width:44px;
+  height:44px;
+  border-radius:50%;
+  object-fit:cover
+}
+.actions .btn{
+  display:inline-block;
+  padding:8px 10px;
+  border-radius:8px;
+  background:#5a54e3;
+  color:#fff;
+  text-decoration:none;
+  border:none;
+  cursor:pointer;
+  margin-right:6px
+}
+.actions .btn.danger{
+  background:#e53935
+}
+@media(max-width:900px){
+  .sidebar{
+    width:64px;padding:12px
+  }
+  .main{
+    margin-left:80px
+  }
+    }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h2>Admin Panel</h2>
+    <nav>
+      <a href="{{ url_for('admin_dashboard') }}">🏠 Dashboard</a>
+      <a href="{{ url_for('admin_tasks') }}">🗒 Tasks</a>
+      <a href="{{ url_for('login') }}" class="logout">Logout</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Top Stats -->
+    <section class="cards">
+      <div class="card">
+        <h4>Total Users</h4>
+        <div class="stat">{{ users|length }}</div>
+      </div>
+      <div class="card">
+        <h4>Total Admins</h4>
+        <div class="stat">{% set admins = users|selectattr('role','equalto','admin')|list %}{{ admins|length }}</div>
+      </div>
+      <div class="card">
+        <h4>Pending Requests</h4>
+        <div class="stat">{{ requests|length }}</div>
+      </div>
+      <div class="card">
+        <h4>Total Tasks</h4>
+        <div class="stat">{{ tasks|length }}</div>
+      </div>
+    </section>
+
+    <!-- Charts + Requests -->
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="flex:1;min-width:340px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(33,37,78,0.06)">
+        <h4>Role Distribution</h4>
+        <canvas id="roleChart" height="200
+        "></canvas>
+      </div>
+      <div style="flex:1;min-width:340px;background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(33,37,78,0.06)">
+        <h4>Access Requests</h4>
+        {% if requests %}
+          <ul style="padding-left:16px">
+            {% for req in requests %}
+              <li>{{ req.username }} — <a href="{{ url_for('admin_edit', user_id=req.user_id) }}">Review</a></li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No pending requests.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- User Table -->
+    <div class="table-card">
+      <h4>User Management</h4>
+      <table id="userTable" class="display responsive nowrap" style="width:100%">
+        <thead>
+          <tr><th>ID</th><th>Profile</th><th>Username</th><th>Email</th><th>Mobile</th><th>DOB</th><th>Age</th><th>Role</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td>{{ u.id }}</td>
+            <td>{% if u.profile_pic %}<img src="/static/uploads/{{ u.profile_pic }}" class="avatar">{% else %}<img src="https://via.placeholder.com/44" class="avatar">{% endif %}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.mobile }}</td>
+            <td class="dob">{{ u.date_of_birth }}</td>
+            <td class="age">--</td>
+            <td>{{ u.role if 'role' in u.keys() else 'user' }}</td>
+            <td class="actions">
+              <a href="{{ url_for('admin_edit', user_id=u.id) }}" class="btn">Edit</a>
+              <button class="btn danger" onclick="confirmDelete({{ u.id }})">Delete</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- ✅ JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+<script>
+function calculateAge(dob){if(!dob)return"N/A";
+const d=new Date(dob);
+if(isNaN(d))return"N/A";
+const t=new Date();
+let a=t.getFullYear()-d.getFullYear();
+const m=t.getMonth()-d.getMonth();
+if(m<0||(m===0&&t.getDate()<d.getDate()))a--;
+  return a}
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.dob').forEach(el=>{const dob=el.textContent.trim();el.parentElement.querySelector('.age').textContent=calculateAge(dob)});
+  $('#userTable').DataTable({responsive:true,pageLength:10});
+  const admins={{ admins|length }};
+  const total={{ users|length }};
+  const users_count=total-admins;
+  new Chart(document.getElementById('roleChart'),{type:'bar',data:{labels:['Users','Admins'],datasets:[{data:[users_count,admins],backgroundColor:['#6c63ff','#10b63f']}]},options:{plugins:{legend:{position:'bottom'}}}});
+});
+function confirmDelete(id){
+  Swal.fire({icon:'warning',title:'Delete?',text:'This cannot be undone',showCancelButton:true,confirmButtonColor:'#e53935'})
+    .then(r=>{if(r.isConfirmed)window.location.href='/admin/delete/'+id;});
+}
+</script>
+</body>
+</html>

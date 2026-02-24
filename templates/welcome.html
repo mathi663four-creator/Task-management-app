@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
+body {
+  background: #f5f7fb;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* ✅ Card */
+.card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px;
+  width: 400px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  transition: 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* ✅ Heading */
+h2 {
+  color: #1c0ccd;
+  margin-bottom: 10px;
+}
+h3 {
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* ✅ Input fields */
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 14px;
+  background-color: #fafafa;
+  transition: 0.3s;
+}
+input:focus {
+  border-color: #1c0ccd;
+  box-shadow: 0 0 6px rgba(28,12,205,0.3);
+}
+
+/* ✅ Login button */
+.login-btn {
+  background: #1c0ccd;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+.login-btn:hover {
+  background: #10b63f;
+  transform: scale(1.03);
+}
+
+/* ✅ Messages */
+.message {
+  margin-bottom: 10px;
+  font-weight: bold;
+  font-size: 14px;
+}
+.success { color: #10b63f; }
+.error { color: #e53935; }
+
+/* ✅ Forgot + Register Links */
+a {
+  text-decoration: none;
+  color: #1c0ccd;
+  font-size: 14px;
+  display: inline-block;
+  margin-top: 10px;
+}
+a:hover {
+  color: #10b63f;
+  text-decoration: underline;
+}
+.forgot {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  color: #ff5722;
+}
+.forgot:hover {
+  color: #e64a19;
+}
+
+/* ✅ Responsive */
+@media (max-width: 480px) {
+  .card {
+    width: 90%;
+    padding: 30px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Welcome Back 🥳</h2>
+  <h3>Login with your Mobile Number</h3>
+
+  {% if message %}
+    <p class="message {{ alert }}">{{ message }}</p>
+  {% endif %}
+
+  <form action="{{ url_for('login') }}" method="post">
+    <input type="tel" name="mobile" placeholder="📱 Enter your Mobile Number" maxlength="10" required pattern="[6-9][0-9]{9}">
+    <input type="password" name="password" placeholder="🔐 Password" required>
+    <a href="{{ url_for('forgot_password') }}" class="forgot">Forgot Password?</a>
+    <button class="login-btn" type="submit">Login</button>
+  </form>
+
+  <a href="{{ url_for('home') }}">Don't have an account? Register</a>
+</div>
+
+</body>
+</html>

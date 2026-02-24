@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin - Task Management</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    :root { 
+        --primary: #7367f0; 
+        --bg: #e9e9eb; 
+        --border: #dbdade; 
+        --text: #6f6b7d; 
+    }
+    * { box-sizing: border-box; font-family: 'Public Sans', sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { 
+        width: 260px; 
+        background: rgb(54, 52, 52);; 
+        border-right: 1px solid var(--border); 
+        position: fixed; 
+        height: 100vh; 
+        padding: 20px; 
+        color:white
+    
+    }
+    .sidebar h2 { color: var(--primary); margin-bottom: 30px;text-align: center;background-color: white;border-radius: 8px; }
+    .sidebar a { display: block; padding: 12px; 
+        color: var(--bg); 
+        text-decoration: none; 
+        border-radius: 6px; 
+        margin-bottom: 5px; 
+        transition: 0.3s;
+        
+    }
+    .sidebar a:hover {
+        background: #f0efff;
+        color: black;
+    }
+
+    .sidebar a.active { background: rgba(115,103,240,0.1); 
+        color: var(--primary);}
+
+.sidebar .logout {
+  margin-top: 200%;
+  background: #1c0ccd;
+  color: #fff;
+  text-align: center;
+}
+
+.sidebar .logout:hover {
+  background: #10b63f;
+  color: #fff;
+}
+
+    .main { margin-left: 260px; 
+        padding: 20px; 
+        flex: 1; }
+
+    .todo-card { display: flex; 
+        background: #fff; 
+        border-radius: 8px; 
+        box-shadow: 0 4px 24px rgba(0,0,0,0.06); 
+        min-height: 85vh; 
+        overflow: hidden; }
+
+    .todo-filters { width: 280px; 
+        border-right: 1px solid var(--border); 
+        padding: 20px; }
+
+    .btn-add { width: 100%; 
+        background:#10b63f; 
+        color: #fff; 
+        border: none; 
+        padding: 12px; 
+        border-radius: 6px; 
+        font-weight: 600; 
+        cursor: pointer; 
+        margin-bottom: 20px; }
+
+    .filter-nav p{ cursor:pointer; 
+        margin:10px 0; 
+        display:flex; 
+        align-items:center; 
+        justify-content:space-between; 
+        transition:0.3s;}
+
+    .filter-nav p:hover { color: var(--primary); }
+
+    .filter-nav p.active { color: var(--primary); 
+        font-weight:600; }
+
+    .filter-count{ font-size:13px; 
+        background:#f1f0ff; 
+        color:var(--primary); 
+        border-radius:10px; 
+        padding:2px 8px; }
+
+    .editable-title{ outline:none; 
+        cursor:text; 
+        padding:2px 4px; 
+        border-radius:4px; }
+
+    .editable-title:focus{ background:#e9e8ff; 
+        color:#5a54e3; }
+    .todo-view { flex:1; 
+        display:flex; 
+        flex-direction:column; 
+        overflow-x:auto; }
+
+    .todo-header { padding:15px 20px; 
+        border-bottom:1px solid var(--border); 
+        display:flex; 
+        align-items:center; 
+        gap:10px; }
+
+    .todo-header input { border:none; 
+        outline:none; 
+        width:100%; 
+        font-size:16px; }
+
+    table{ width:100%; 
+        border-collapse: collapse; }
+
+    th, td{ padding:14px 16px; 
+        border-bottom:1px solid #f1f0f2; 
+        text-align:left; 
+        font-size:15px;
+        color:black }
+
+    th{ background:#1c0ccd; 
+        color:#fff; 
+        font-weight:600;
+        font-size: large;
+     }
+
+    tr:hover{ background:#f9f8ff; }
+
+    .avatar{ width:32px; 
+        height:32px; 
+        border-radius:50%; 
+        object-fit:cover; }
+
+    .status-badge{ padding:4px 10px; 
+        border-radius:12px; 
+        font-size:13px; 
+        font-weight:600; 
+        text-transform:capitalize; }
+
+    .status-todo{ background:#fff3cd; 
+        color:#856404; }
+
+    .status-doing{ background:#cce5ff; 
+        color:#004085; }
+
+    .status-done{ background:#d4edda; 
+        color:#155724; }
+
+    .drawer{ position:fixed; 
+        top:0; 
+        right:-450px; 
+        width:400px; 
+        height:100%; 
+        background:#fff; 
+        z-index:1000; 
+        transition:0.4s; 
+        box-shadow:-10px 0 30px rgba(0,0,0,0.1); 
+        padding:25px; }
+
+    .drawer.open{ right:0; }
+
+    .overlay{ display:none; 
+        position:fixed; 
+        inset:0; 
+        background:rgba(0,0,0,0.3); 
+        z-index:999; }
+    .overlay.active{ display:block; }
+   
+
+</style>
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <h2>Admin Panel</h2>
+        <nav>
+            <a href="{{ url_for('admin_dashboard') }}">🏠 Dashboard</a>
+            <a href="{{ url_for('admin_tasks') }}">🗒 Tasks</a>
+            <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="todo-card">
+            <aside class="todo-filters">
+                <button class="btn-add" onclick="toggleDrawer()">Add Task</button>
+                <button class="btn-add" onclick="addColumn()">Add Column</button>
+
+                <div class="filter-nav" id="filterNav">
+                    <p><b>Filters</b></p>
+
+                    <p class="filter-option active" onclick="filterTasks('all', this)">
+                        <span><i class="fa fa-list"></i> All Tasks</span>
+                        <span class="filter-count" id="count-all">0</span>
+                    </p>
+
+                    {% for status, title in titles.items() %}
+                        <p class="filter-option" ondblclick="editTitle(this, '{{ status }}')" onclick="filterTasks('{{ status }}', this)" 
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                <i class="fa fa-columns"></i> 
+                                <span class="editable-title" id="title-{{ status }}">{{ title }}</span>
+                            </span>
+
+                            <span style="display:flex; align-items:center; gap:6px;">
+                                <span class="filter-count" id="count-{{ status }}">0</span>
+                                <!-- 🗑 Delete icon for all columns -->
+                                <i class="fa fa-trash" style="cursor:pointer; color:#e53935;" onclick="deleteColumn('{{ status }}', '{{ title }}', event)"></i>
+                            </span>
+                        </p>
+                    {% endfor %}
+
+
+                </div>
+
+            </aside>
+
+            <section class="todo-view">
+                <div class="todo-header">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search tasks..." id="searchInput" onkeyup="searchTasks()">
+                </div>
+                <table id="taskTable">
+                    <thead>
+                        <tr>
+                            <th>Task Name</th>
+                            <th>Assigned User</th>
+                            <th>Assigned Time</th>
+                            <th>Completed Time</th>
+                            <th>Time Taken</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                <tbody id="todoList">
+                        {% for task in tasks %}
+                        <tr class="todo-item" data-status="{{ task.status }}">
+                            <td>{{ task.title }}</td>
+                            <td style="display:flex;align-items:center;gap:8px;">
+                                {% if task.profile_pic %}
+                                    <img src="/static/uploads/{{ task.profile_pic }}" class="avatar" alt="{{ task.username }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/32" class="avatar" alt="{{ task.username }}">
+                                {% endif %}
+                                <span>{{ task.username }}</span>
+                            </td>
+                            <td>{{ task.assigned_time or '—' }}</td>
+                            <td>{{ task.completed_time or '—' }}</td>
+                            <td>
+                                {% if task.completed_time %}
+                                    {% set start = task.assigned_time | to_datetime %}
+                                    {% set end = task.completed_time | to_datetime %}
+                                    {% if start and end %}
+                                        {{ ((end - start).total_seconds() / 3600) | round(2) }} hrs
+                                    {% else %}
+                                        In Progress
+                                    {% endif %}
+
+                                {% else %}
+                                    In Progress
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button onclick="deleteTask({{ task.id }})"
+                                        style="background:#e53935;color:white;border:none;
+                                               padding:6px 10px;border-radius:6px;
+                                               cursor:pointer;font-size:13px;">
+                                    🗑 Delete
+                                </button>
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+</div>
+
+<!-- Add Task Drawer -->
+<div id="drawer" class="drawer">
+    <h3>Add Task</h3>
+    <form action="{{ url_for('add_task') }}" method="POST" onsubmit="prepareTaskContent(event)">
+        <label>Task Title</label>
+        <input type="text" name="title" placeholder="Enter task title" required>
+
+        <label>Task Description</label>
+        <!-- Toolbar -->
+        <div class="editor-toolbar" style="margin-bottom:5px; display:flex; gap:5px;">
+            <select id="fontSelect">
+                <option value="Arial">Arial</option>
+                <option value="Tahoma">Tahoma</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+            <select id="alignSelect">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+            </select>
+            <input type="color" id="colorPicker" value="#000000">
+            <button type="button" onclick="execCmd('bold')"><b>B</b></button>
+            <button type="button" onclick="execCmd('italic')"><i>I</i></button>
+            <button type="button" onclick="execCmd('underline')"><u>U</u></button>
+        </div>
+        <div id="descriptionEditor" contenteditable="true" style="border:1px solid #ccc; padding:8px; border-radius:6px; min-height:100px;"></div>
+        <input type="hidden" name="description" id="descriptionInput">
+
+        <label>Assign To User</label>
+        <select name="assignee" style="width:100%; padding:8px;">
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.username }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn-add">Create Task</button>
+        <button type="button" class="btn-add" style="background:#ccc;" onclick="toggleDrawer()">Cancel</button>
+    </form>
+</div>
+
+<div id="overlay" class="overlay" onclick="toggleDrawer()"></div>
+
+<script>
+function addColumn() {
+    const name = prompt("Enter new column title:");
+    if (!name) return;
+
+    // Generate a safe status key
+    const id = name.toLowerCase().replace(/\s+/g, '_');
+
+    // ✅ Send it to backend for permanent storage
+    fetch("/add-column", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: id, title: name })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                icon: "success",
+                title: "Column Added",
+                text: `"${name}" has been added successfully!`,
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            // ✅ Add it visually without refreshing
+            const filterNav = document.getElementById("filterNav");
+            const p = document.createElement("p");
+            p.className = "filter-option";
+            p.setAttribute("onclick", `filterTasks('${id}', this)`);
+            p.innerHTML = `<span><i class="fa fa-columns"></i> 
+                <span class="editable-title" id="title-${id}">${name}</span>
+                </span> <span class="filter-count" id="count-${id}">0</span>`;
+            filterNav.appendChild(p);
+        } else {
+            Swal.fire("Error", data.error || "Failed to add column", "error");
+        }
+    });
+}
+</script>
+
+<script>
+function editTitle(element, status) {
+  const span = document.getElementById('title-' + status);
+  const oldTitle = span.textContent.trim();
+  span.setAttribute('contenteditable', true);
+  span.focus();
+
+  span.addEventListener('blur', () => {
+    const newTitle = span.textContent.trim();
+    span.removeAttribute('contenteditable');
+
+    if (newTitle && newTitle !== oldTitle) {
+      fetch('/update-column-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status, new_title: newTitle })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Updated!',
+            text: `Column "${oldTitle}" renamed to "${newTitle}"`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire('Error', data.error || 'Update failed', 'error');
+        }
+      });
+    } else {
+      span.textContent = oldTitle; // revert if empty or unchanged
+    }
+  }, { once: true });
+}
+</script>
+
+<script>
+function deleteColumn(status, title, event) {
+  event.stopPropagation(); // prevent triggering filter click
+  Swal.fire({
+    icon: 'warning',
+    title: `Delete "${title}"?`,
+    text: 'This will permanently remove the column and its tasks from the board.',
+    showCancelButton: true,
+    confirmButtonColor: '#e53935',
+    confirmButtonText: 'Yes, delete it'
+  }).then(result => {
+    if (result.isConfirmed) {
+      fetch('/delete-column', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: `"${title}" has been removed.`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+          document.getElementById(`title-${status}`).closest('p').remove();
+        } else {
+          Swal.fire('Error', data.error || 'Could not delete column', 'error');
+        }
+      });
+    }
+  });
+}
+</script>
+
+<script>
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
+}
+
+function prepareTaskContent(e){
+  const editor = document.getElementById('descriptionEditor');
+  const input = document.getElementById('descriptionInput');
+  input.value = editor.innerHTML; // Save editor content
+}
+</script>
+<script>
+function updateCounts() {
+  // Get all rows (tasks)
+  const rows = document.querySelectorAll('.todo-item');
+  // Initialize counters
+  let total = 0;
+  const counts = {};
+
+  rows.forEach(row => {
+    const status = row.dataset.status;
+    counts[status] = (counts[status] || 0) + 1;
+    total++;
+  });
+
+  // ✅ Update each filter count dynamically
+  document.querySelectorAll('.filter-count').forEach(el => {
+    const id = el.id.replace('count-', '');
+    if (id === 'all') el.textContent = total;
+    else el.textContent = counts[id] || 0;
+  });
+}
+
+// ✅ Update counts on load and after filters
+document.addEventListener('DOMContentLoaded', updateCounts);
+</script>
+
+<script>
+function filterTasks(statusKey, element) {
+  // Remove highlight from other filters
+  document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
+  element.classList.add('active');
+
+  // Show/hide tasks
+  const rows = document.querySelectorAll('.todo-item');
+  let visibleCount = 0;
+
+  rows.forEach(row => {
+    const taskStatus = row.getAttribute('data-status');
+    if (statusKey === 'all' || taskStatus === statusKey) {
+      row.style.display = '';
+      visibleCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  // Update "All" counter to show visible
+  document.getElementById('count-all').textContent = visibleCount;
+}
+</script>
+
+
+<script>
+// ✅ Rich Text Editor Toolbar Functions
+function execCmd(command, value = null) {
+  document.execCommand(command, false, value);
+}
+
+// ✅ Apply font family
+document.getElementById("fontSelect").addEventListener("change", function() {
+  execCmd("fontName", this.value);
+});
+
+// ✅ Apply text alignment
+document.getElementById("alignSelect").addEventListener("change", function() {
+  const align = this.value.toLowerCase();
+  if (align === "left") execCmd("justifyLeft");
+  else if (align === "center") execCmd("justifyCenter");
+  else if (align === "right") execCmd("justifyRight");
+});
+
+// ✅ Apply text color
+document.getElementById("colorPicker").addEventListener("change", function() {
+  execCmd("foreColor", this.value);
+});
+</script>
+
+<script>
+// ✅ Show toast if ?deleted=1 is in the URL
+document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("deleted") === "1") {
+    Swal.fire({
+      icon: 'success',
+      title: 'Task deleted successfully!',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
+    });
+    // ✅ Remove the query param from URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+});
+</script>
+
+
+<script>
+function deleteTask(taskId) {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: 'This task will be permanently deleted.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#e53935',
+    cancelButtonColor: '#6c63ff',
+    confirmButtonText: 'Yes, delete it'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = '/delete_task/' + taskId;
+    }
+  });
+}
+</script>
+
+<script>
+// ✅ Update all assigned and completed times to match local timezone
+document.addEventListener("DOMContentLoaded", function () {
+  const timeCells = document.querySelectorAll("td:nth-child(3), td:nth-child(4)"); // Assigned & Completed time columns
+
+  timeCells.forEach(cell => {
+    const value = cell.textContent.trim();
+    if (value && value !== "—" && !value.includes("In Progress")) {
+      // Parse and convert to local time
+      const utcDate = new Date(value + " UTC");
+      if (!isNaN(utcDate)) {
+        const localDate = utcDate.toLocaleString([], { 
+          year: "numeric", 
+          month: "short", 
+          day: "2-digit", 
+          hour: "2-digit", 
+          minute: "2-digit", 
+          hour12: true 
+        });
+        cell.textContent = localDate;
+      }
+    }
+  });
+});
+</script>
+
+<script>
+function searchTasks() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll('.todo-item');
+
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const titleCell = row.cells[0]; // Task Name column
+        const taskTitle = titleCell.textContent.toLowerCase();
+        // Check if row matches search AND current filter
+        const currentFilter = document.querySelector('.filter-option.active').getAttribute('onclick').match(/'([^']+)'/)[1];
+        const statusMatch = currentFilter === 'all' || row.dataset.status === currentFilter;
+
+        if (taskTitle.includes(filter) && statusMatch) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update "All" counter to visible tasks
+    document.getElementById('count-all').textContent = visibleCount;
+}
+</script>
+
+
+</body>
+</html>

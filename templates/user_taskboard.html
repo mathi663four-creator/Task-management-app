@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Task Board</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Poppins", sans-serif; }
+
+body {
+  background: #e9e9eb;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 240px;
+  background: rgb(54, 52, 52);
+  border-right: 1px solid #ddd;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(35, 34, 34, 0.05);
+}
+.sidebar h2 { color: #1c0ccd;background-color: white ;margin-bottom: 25px; text-align: center;border-radius: 8px;}
+.sidebar a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.sidebar a:hover { background: #f0efff; color: black; }
+.sidebar .logout { margin-top: auto; background: #1c0ccd; color: #fff; text-align: center; }
+.sidebar .logout:hover { background: #10b63f; }
+
+.profile-sidebar {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.sidebar-pic {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #5e5ce6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-pic:hover {
+  transform: scale(1.05);
+}
+
+.sidebar h1{
+  color:white
+}
+
+
+/* Main */
+.main {
+  margin-left: 260px;
+  padding: 20px;
+  flex: 1;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.top-bar h1 { font-size:26px; 
+  color:#333; }
+.top-bar span { color:#5e5ce6; 
+  font-weight:600; }
+
+.task-board {
+  display:flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items:stretch; /* This makes all columns the same height in each row */
+  gap: 20px;
+  
+}
+
+/* Column styling */
+.column {
+  flex: 1 1 calc(25% - 20px); /* 4 columns per row */
+  min-width: 260px;
+  max-width: 300px;
+  background: #f8f8ff;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%; /* Ensures column stretches evenly */
+}
+
+.column h3 {
+  text-align: center;
+  margin-bottom: 10px;
+  background-color: #10b63f;
+  color: white;
+  text-transform: capitalize;
+  border-radius: 20px;
+}
+.task-card {
+  background: #cbe7d2;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: grab;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+}
+.task-card:hover { transform: scale(1.03); }
+.task-card strong { color: #1c0ccd; }
+.task-card small { color: #555; }
+
+.drag-over {
+  border: 2px  #5a54e3;
+  background: #f0efff;
+}
+
+/* ✅ Task Summary Section */
+.task-summary {
+  background: #f8f8ff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-top: 10px;
+}
+
+.task-summary p {
+  color: #333;
+  font-size: 14px;
+  text-align: lef;
+}
+
+.progress-bar {
+  width: 100%;
+  background: #eee;
+  border-radius: 10px;
+  height: 20px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5e5ce6, #10b63f);
+  color: white;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+
+
+
+/* Responsive */
+@media(max-width: 768px) {
+  .task-board { flex-direction: column; }
+  .column { min-width: 100%; }
+}
+
+/* Responsive breakpoints for smaller screens */
+@media (max-width: 1200px) {
+  .column { flex: 1 1 calc(33.33% - 20px); } /* 3 per row */
+}
+@media (max-width: 900px) {
+  .column { flex: 1 1 calc(50% - 20px); } /* 2 per row */
+}
+@media (max-width: 600px) {
+  .column { flex: 1 1 100%; } /* 1 per row */
+}
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<!-- 🌿 Sidebar -->
+<div class="sidebar">
+  <h2> User Dashboard</h2>
+  <div class="profile-sidebar">
+    {% if user.profile_pic %}
+      <img src="/static/uploads/{{ user.profile_pic }}" alt="Profile Picture" class="sidebar-pic">
+    {% else %}
+      <img src="https://via.placeholder.com/100" alt="Default Profile" class="sidebar-pic">
+    {% endif %}
+    <h1>{{ user.username }} </h1>
+
+      <!-- ✅ Task Completion Summary -->
+  <div class="task-summary">
+    {% set total = tasks|length %}
+    {% set done = tasks|selectattr('status','equalto','done')|list|length %}
+    {% if total > 0 %}
+      {% set percent = (done / total * 100) | round(1) %}
+    {% else %}
+      {% set percent = 0 %}
+    {% endif %}
+    
+    <p><strong>Total Tasks:</strong> {{ total }}</p>
+    <p><strong>Completed:</strong> {{ done }}</p>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: {{ percent }}%;">{{ percent }}%</div>
+    </div>
+  </div>
+
+  </div>
+    
+  <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
+  <a href="{{ url_for('edit_profile') }}">👤 Edit Profile</a>
+  <a href="{{ url_for('change_password') }}">🔒 Change Password</a>
+  {% if user.role == 'admin' %}
+    <a href="{{ url_for('admin_dashboard') }}">🛠️ Admin Panel</a>
+  {% endif %}
+  <a href="{{ url_for('login') }}" class="logout">Logout</a>
+</div>
+
+
+<main class="main">
+  <header class="top-bar">
+    <h1>Welcome,<span>{{ user.username }} </span> </h1>
+  </header>
+
+  <div class="task-board">
+    {% for status, title in titles.items() %}
+      <div class="column" id="{{ status }}" 
+           ondragover="allowDrop(event)" 
+           ondrop="dropTask(event, '{{ status }}')">
+        <h3>{{ title }}</h3>
+
+        {% for task in tasks if task.status == status %}
+          <div class="task-card" 
+               draggable="true" 
+               ondragstart="drag(event)" 
+               data-id="{{ task.id }}">
+            <strong>{{ task.title }}</strong><br>
+            <small>{{ task.description|safe }}</small>
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</main>
+
+<script>
+// --- Enable Dragging on Each Task Card ---
+document.querySelectorAll('.task-card').forEach(card => {
+  card.draggable = true;
+  card.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('taskId', card.dataset.id);
+  });
+});
+</script>
+
+<script>
+// --- Allow Drop on Each Column ---
+document.querySelectorAll('.column').forEach(column => {
+  column.addEventListener('dragover', e => e.preventDefault());
+
+  column.addEventListener('drop', e => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    const newStatus = column.id.toLowerCase().trim(); // ✅ Always lowercase
+    const card = document.querySelector(`[data-id='${taskId}']`);
+    if (card) {
+      column.appendChild(card);
+      card.style.backgroundColor =
+        newStatus === 'done'
+          ? '#cbe7d2'
+          : newStatus === 'doing' || newStatus === 'in-progress'
+          ? '#cbe7d2'
+          : '#cbe7d2';
+    }
+    updateTaskStatus(taskId, newStatus);
+  });
+});
+
+// --- Save Task Status to Backend ---
+function updateTaskStatus(taskId, newStatus) {
+  fetch('/update_task_status', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: taskId, status: newStatus})
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log('Response from backend:', data); // ✅ Debug log
+    if (data.success) {
+      if (newStatus === 'done' && data.completed_time) {
+        console.log('✅ Completed time:', data.completed_time);
+      }
+      Swal.fire({
+        icon: 'success',
+        title: newStatus === 'done' ? 'Task Completed!' : 'Task Updated!',
+        timer: 1200,
+        showConfirmButton: false
+      });
+    } else {
+      Swal.fire('Error', data.error || 'Failed to update task', 'error');
+    }
+  })
+  .catch(err => console.error('❌ Error updating task:', err));
+}
+</script>
+
+
+<script>
+let lastTaskCount = {{ tasks|length }};
+console.log("Initial task count:", lastTaskCount);
+
+async function checkForNewTasks() {
+  try {
+    const response = await fetch(window.location.pathname, { cache: "no-store" });
+    const text = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "text/html");
+    const newTaskCount = doc.querySelectorAll(".task-card").length;
+    console.log("New task count:", newTaskCount);
+
+    if (newTaskCount > lastTaskCount) {
+      Swal.fire({
+        icon: "info",
+        title: "New Task Assigned!",
+        text: "A new task has been assigned to you by the admin.",
+        timer: 2500,
+        showConfirmButton: false
+      }).then(() => window.location.reload());
+    }
+    lastTaskCount = newTaskCount;
+  } catch (err) {
+    console.error("Error checking tasks:", err);
+  }
+}
+// 🔁 Check every 10 seconds
+setInterval(checkForNewTasks, 10000);
+</script>
+
+
+</body>
+</html>
