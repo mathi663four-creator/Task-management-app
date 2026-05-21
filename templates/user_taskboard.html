@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>User Task Board</title>
@@ -174,6 +176,12 @@ header {
   transition: width 0.6s ease;
 }
 
+.analytics{
+  margin-top: 30px;
+  height: 500%;
+  width: 1000px;
+}
+
 
 
 /* Responsive */
@@ -229,11 +237,12 @@ header {
   </div>
     
   <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
-  <a href="{{ url_for('edit_profile') }}">👤 Edit Profile</a>
+  <a href="{{ url_for('edit_profile') }}">✏️ Edit Profile</a>
   <a href="{{ url_for('change_password') }}">🔒 Change Password</a>
   {% if user.role == 'admin' %}
     <a href="{{ url_for('admin_dashboard') }}">🛠️ Admin Panel</a>
   {% endif %}
+  
   <a href="{{ url_for('login') }}" class="logout">Logout</a>
 </div>
 
@@ -241,28 +250,61 @@ header {
 <main class="main">
   <header class="top-bar">
     <h1>Welcome,<span>{{ user.username }} </span> </h1>
+    <input type="text" id="searchTask" placeholder="🔍 Search tasks..." 
+       style="padding:8px;border-radius:8px;border:1px solid #ccc;">
+
   </header>
 
   <div class="task-board">
     {% for status, title in titles.items() %}
       <div class="column" id="{{ status }}" 
-           ondragover="allowDrop(event)" 
-           ondrop="dropTask(event, '{{ status }}')">
+          ondragover="allowDrop(event)" 
+          ondrop="dropTask(event, '{{ status }}')">
         <h3>{{ title }}</h3>
 
-        {% for task in tasks if task.status == status %}
+        {% for task in tasks if task.status | trim | lower == status | trim | lower %}
           <div class="task-card" 
-               draggable="true" 
-               ondragstart="drag(event)" 
-               data-id="{{ task.id }}">
+              draggable="true" 
+              ondragstart="drag(event)" 
+              data-id="{{ task.id }}">
             <strong>{{ task.title }}</strong><br>
             <small>{{ task.description|safe }}</small>
           </div>
         {% endfor %}
+    
       </div>
     {% endfor %}
+
   </div>
+
+    <div class="analytics">
+      <h2>Task Chart </h2>
+      <canvas id="taskChart"></canvas>
+    </div>
 </main>
+<script>
+const tasks = {{ tasks|tojson }};
+
+let todo = 0, doing = 0, done = 0;
+
+tasks.forEach(t => {
+  const s = t.status.trim().toLowerCase();
+  if (s === 'todo') todo++;
+  else if (s === 'doing') doing++;
+  else if (s === 'done') done++;
+});
+
+new Chart(document.getElementById('taskChart'), {
+  type: 'bar',
+  data: {
+    labels: ['To Do', 'Doing', 'Done'],
+    datasets: [{
+      data: [todo, doing, done]
+      
+    }]
+  }
+});
+</script>
 
 <script>
 // --- Enable Dragging on Each Task Card ---
@@ -270,6 +312,17 @@ document.querySelectorAll('.task-card').forEach(card => {
   card.draggable = true;
   card.addEventListener('dragstart', e => {
     e.dataTransfer.setData('taskId', card.dataset.id);
+  });
+});
+</script>
+
+<script>
+document.getElementById('searchTask').addEventListener('input', function() {
+  const value = this.value.toLowerCase();
+
+  document.querySelectorAll('.task-card').forEach(card => {
+    const title = card.querySelector('strong').innerText.toLowerCase();
+    card.style.display = title.includes(value) ? 'block' : 'none';
   });
 });
 </script>
@@ -353,8 +406,88 @@ async function checkForNewTasks() {
     console.error("Error checking tasks:", err);
   }
 }
-// 🔁 Check every 10 seconds
-setInterval(checkForNewTasks, 10000);
+async function fetchTasksAndUpdateUI() {
+  try {
+    const response = await fetch("/user/tasks-data"); // new API
+    const data = await response.json();
+
+    const columns = document.querySelectorAll('.column');
+
+    // Clear all columns
+    columns.forEach(col => {
+      col.querySelectorAll('.task-card').forEach(card => card.remove());
+    });
+
+    // Re-add tasks dynamically
+    data.tasks.forEach(task => {
+      const status = task.status.trim().toLowerCase();
+      const column = document.getElementById(status);
+
+      if (column) {
+        const div = document.createElement('div');
+        div.className = "task-card";
+        div.setAttribute("draggable", "true");
+        div.setAttribute("data-id", task.id);
+
+        div.innerHTML = `
+          <strong>${task.title}</strong><br>
+          <small>${task.description}</small>
+        `;
+
+        // Drag event
+        div.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('taskId', task.id);
+        });
+
+        column.appendChild(div);
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Auto refresh error:", err);
+  }
+}
+
+let previousTaskIds = new Set();
+
+// Initialize existing tasks
+document.querySelectorAll('.task-card').forEach(card => {
+  previousTaskIds.add(card.dataset.id);
+});
+
+async function checkNewTaskNotification() {
+  try {
+    const response = await fetch("/user/tasks-data");
+    const data = await response.json();
+
+    const currentTaskIds = new Set();
+
+    data.tasks.forEach(task => {
+      currentTaskIds.add(String(task.id));
+
+      // 🚨 New task detected
+      if (!previousTaskIds.has(String(task.id))) {
+        Swal.fire({
+          icon: "info",
+          title: "📢 New Task Assigned!",
+          text: task.title,
+          timer: 3000,
+          showConfirmButton: false
+        });
+      }
+    });
+
+    previousTaskIds = currentTaskIds;
+
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+}
+
+// 🔁 Check every 5 seconds
+setInterval(checkNewTaskNotification, 5000);
+
+
 </script>
 
 

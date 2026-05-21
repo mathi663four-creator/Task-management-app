@@ -49,13 +49,18 @@ body { display:flex;
 .sidebar a:hover { background:#f0efff;color: black; 
    }
 
-.sidebar .logout { margin-top:auto; 
-  background:#1c0ccd; 
-  color:#fff; 
-  justify-content:center; }
 
-.sidebar .logout:hover { background:#1c0ccd; 
-  color:#fff; }
+.sidebar .logout {
+  margin-top: auto;
+  background: #1c0ccd;
+  color: #fff;
+  justify-content: center;
+}
+
+.sidebar .logout:hover {
+  background: #10b63f;
+  color:#fff;
+}
 
 /* 🌿 Main Content */
 .main-content { flex:1; 
@@ -99,13 +104,12 @@ body { display:flex;
   font-size:20px; 
   color:#444; }
 
-.profile-card .info p { margin:6px 0; }
+.profile-card .info p { margin:6px 0;
+  padding-top: 5px; }
 
 .profile-card a { color:red; 
   font-size:13px; 
   text-decoration:none; }
-
-.profile-card a:hover { text-decoration:underline; }
 
 /* ✅ Task Button */
 .task-btn-container { display:flex; 
@@ -212,7 +216,27 @@ body { display:flex;
   color:white
 }
 
+.request{
+  background-color:#fa1404;
+  border-radius: 10px;
+  margin-top:20px ;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  justify-content:center;
+  display:flex;
+  transition:0.3s; 
+}
 
+.request a{
+  color:white;
+  font-size:medium;
+}
+
+.request:hover {
+  transform:scale(1.05)
+}
 
 
 @keyframes fadeUp { to { opacity:1; 
@@ -238,7 +262,7 @@ body { display:flex;
   </div>
   
   <a href="{{ url_for('dashboard') }}">🏠 Dashboard</a>
-  <a href="{{ url_for('edit_profile') }}">👤 Edit Profile</a>
+  <a href="{{ url_for('edit_profile') }}">✏️ Edit Profile</a>
   <a href="{{ url_for('change_password') }}">🔒 Change Password</a>
   {% if user.role == 'admin' %}
     <a href="{{ url_for('admin_dashboard') }}">🛠️ Admin Panel</a>
@@ -267,7 +291,8 @@ body { display:flex;
       <p><strong>Age:</strong> {{ age }} years</p>
       {% if user.role != 'admin' %}
         <p><strong>Role:</strong> User</p>
-        <a href="{{ url_for('request_permission') }}">Request Admin Access</a>
+        <div class="request"><a href="{{ url_for('request_permission') }}">Request Admin Access</a></div>
+        
       {% else %}
         <p style="color:#10b63f;font-weight:bold;">✓ Admin Access Granted</p>
       {% endif %}
@@ -275,11 +300,11 @@ body { display:flex;
   </div>
 
   <!-- ✅ Show Tasks Button -->
-<div class="task-btn-container">
-  <a href="{{ url_for('user_tasks') }}" >
-    <button class="show-task-btn">Show Tasks</button>
-  </a>
-</div>
+  <div class="task-btn-container">
+   <a href="{{ url_for('user_tasks') }}" >
+      <button class="show-task-btn">Show Tasks</button>
+   </a>
+ </div>
   
 
 </div>

@@ -244,12 +244,18 @@ def get_user_by_username(username):
 
 def get_user_tasks(user_id):
     db = get_db()
-    return db.execute("SELECT * FROM tasks WHERE user_id=? ORDER BY created_at DESC", (user_id,)).fetchall()
+    rows = db.execute(
+        "SELECT * FROM tasks WHERE user_id=? ORDER BY created_at DESC",
+        (user_id,)
+    ).fetchall()
+
+    return [dict(row) for row in rows]  # always return clean data
+
 
 def get_board_titles():
     db = get_db()
     rows = db.execute("SELECT status, title FROM board_titles").fetchall()
-    return {row['status']: row['title'] for row in rows}
+    return {row['status'].strip(): row['title'].strip() for row in rows}
 
 # ---------- Routes ----------
 @app.route('/')
@@ -438,6 +444,14 @@ def update_task_status():
     # ✅ Treat any "done/completed" as done
     done_aliases = ['done', 'completed', 'finished', 'complete']
 
+    new_status = (data.get('status') or '').strip().lower()
+
+    if new_status in ['in-progress', 'in progress']:
+        new_status = 'doing'
+    elif new_status in ['completed', 'finished']:
+        new_status = 'done'
+
+
     if new_status in done_aliases:
         db.execute("""
             UPDATE tasks
@@ -476,7 +490,7 @@ def update_column_title():
         return jsonify({'error': 'Invalid request format'}), 400
 
     data = request.get_json()
-    status = data.get('status')
+    status = data.get('status', '').strip()
     new_title = data.get('new_title', '').strip()
 
     if not status or not new_title:
@@ -497,8 +511,6 @@ def update_column_title():
     return jsonify({'success': True, 'new_title': new_title})
 
 
-
-
 # ---------- User Task Board ----------
 @app.route("/user/tasks")
 @login_required
@@ -506,9 +518,12 @@ def user_tasks():
     db = get_db()
     user = db.execute("SELECT * FROM users WHERE id=?", (session["user_id"],)).fetchone()
     tasks = get_user_tasks(user['id'])
+    tasks = [dict(task) for task in tasks]   # 🔥 FIX HERE
+
     titles = get_board_titles()  # exact same order from DB
 
     return render_template("user_taskboard.html", tasks=tasks, user=user, titles=titles)
+    
 
 
 # ---------- Admin Dashboard ----------
@@ -524,6 +539,16 @@ def admin_dashboard():
     requests = db.execute("SELECT * FROM permissions_requests WHERE status='pending'").fetchall()
     tasks = db.execute("SELECT * FROM tasks").fetchall()  # ✅ Fetch all tasks
     return render_template("admin.html", users=users, requests=requests, tasks=tasks)
+
+
+# ---------- Admin Users ----------
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    db = get_db()
+    users = db.execute("SELECT * FROM users").fetchall()
+    requests = db.execute("SELECT * FROM permissions_requests WHERE status='pending'").fetchall()
+    return render_template("adminusers.html", users=users, requests=requests)
 
 
 # ---------- Admin Edit ----------
@@ -611,13 +636,14 @@ def add_task():
 
     # ✅ get first (default) status dynamically from board_titles
     first_col = db.execute("SELECT status FROM board_titles ORDER BY ROWID ASC LIMIT 1").fetchone()
-    status = first_col['status'] if first_col else 'todo'
+    status = first_col['status'].strip() if first_col else 'todo'
 
     # ✅ insert new task with that status
     db.execute("""
-        INSERT INTO tasks (title, description, status, user_id, created_at, assigned_time)
-        VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-    """, (title, description, status, assignee_id))
+    INSERT INTO tasks (title, description, status, user_id, created_at, assigned_time)
+    VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+""", (title, description, status, assignee_id))
+
     db.commit()
 
     # ✅ send task email
@@ -637,7 +663,7 @@ def complete_task(task_id):
     db = get_db()
     db.execute("""
         UPDATE tasks 
-        SET status = 'done', completed_time = datetime('now') 
+        SET status = 'done', completed_time = datetime('now'), updated_at = datetime('now') 
         WHERE id = ?
     """, (task_id,))
     db.commit()
@@ -649,8 +675,8 @@ def complete_task(task_id):
 @admin_required
 def add_column():
     data = request.get_json()
-    status_key = data.get('status')
-    title = data.get('title')
+    status_key = data.get('status', '').strip()
+    title = data.get('title', '').strip()
 
     if not status_key or not title:
         return jsonify({'error': 'Missing data'}), 400
@@ -683,7 +709,7 @@ def delete_column():
         return jsonify({'error': 'Invalid request format'}), 400
 
     data = request.get_json()
-    status = data.get('status')
+    status = data.get('status', '').strip()
 
     if not status:
         return jsonify({'error': 'Missing column ID'}), 400

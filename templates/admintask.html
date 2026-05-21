@@ -22,18 +22,18 @@
         border-right: 1px solid var(--border); 
         position: fixed; 
         height: 100vh; 
-        padding: 20px; 
-        color:white
-    
+        padding: 20px;  
+        color:white;
+        display: flex;
+        flex-direction: column;
     }
-    .sidebar h2 { color: var(--primary); margin-bottom: 30px;text-align: center;background-color: white;border-radius: 8px; }
+    .sidebar h2 {  margin-bottom: 30px;text-align: center;background-color: #fff;color:#1c0ccd;border-radius: 8px; }
     .sidebar a { display: block; padding: 12px; 
         color: var(--bg); 
         text-decoration: none; 
         border-radius: 6px; 
         margin-bottom: 5px; 
         transition: 0.3s;
-        
     }
     .sidebar a:hover {
         background: #f0efff;
@@ -43,21 +43,36 @@
     .sidebar a.active { background: rgba(115,103,240,0.1); 
         color: var(--primary);}
 
-.sidebar .logout {
-  margin-top: 200%;
-  background: #1c0ccd;
-  color: #fff;
-  text-align: center;
-}
+    .sidebar .logout { 
+        margin-top: auto; 
+        background:#1c0ccd; 
+        color:#fff; 
+        text-align:center; 
+    }
 
-.sidebar .logout:hover {
-  background: #10b63f;
-  color: #fff;
-}
+    .sidebar .logout:hover { background:#10b63f; 
+      color:#fff; }
 
     .main { margin-left: 260px; 
         padding: 20px; 
         flex: 1; }
+
+        .stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.card {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
 
     .todo-card { display: flex; 
         background: #fff; 
@@ -187,7 +202,8 @@
         <h2>Admin Panel</h2>
         <nav>
             <a href="{{ url_for('admin_dashboard') }}">🏠 Dashboard</a>
-            <a href="{{ url_for('admin_tasks') }}">🗒 Tasks</a>
+            <a href="{{ url_for('admin_users') }}">👥 Users</a>
+            <a href="{{ url_for('admin_tasks') }}" style="background: rgba(255,255,255,0.15); color: #fff; font-weight: 600;">🗒️ Tasks</a>
             <a href="{{ url_for('logout') }}" class="logout">Logout</a>
         </nav>
     </aside>
@@ -245,7 +261,7 @@
                     </thead>
                 <tbody id="todoList">
                         {% for task in tasks %}
-                        <tr class="todo-item" data-status="{{ task.status }}">
+                        <tr class="todo-item" data-status="{{ task.status | trim | lower }}">
                             <td>{{ task.title }}</td>
                             <td style="display:flex;align-items:center;gap:8px;">
                                 {% if task.profile_pic %}
@@ -295,11 +311,11 @@
     <h3>Add Task</h3>
     <form action="{{ url_for('add_task') }}" method="POST" onsubmit="prepareTaskContent(event)">
         <label>Task Title</label>
-        <input type="text" name="title" placeholder="Enter task title" required>
+        <input type="text" name="title" placeholder="Enter task title" required><br><br>
 
         <label>Task Description</label>
         <!-- Toolbar -->
-        <div class="editor-toolbar" style="margin-bottom:5px; display:flex; gap:5px;">
+        <div class="editor-toolbar" style="margin-bottom:5px;margin-top: 10px; display:flex; gap:5px;">
             <select id="fontSelect">
                 <option value="Arial">Arial</option>
                 <option value="Tahoma">Tahoma</option>
@@ -318,16 +334,16 @@
             <button type="button" onclick="execCmd('underline')"><u>U</u></button>
         </div>
         <div id="descriptionEditor" contenteditable="true" style="border:1px solid #ccc; padding:8px; border-radius:6px; min-height:100px;"></div>
-        <input type="hidden" name="description" id="descriptionInput">
+        <input type="hidden" name="description" id="descriptionInput"><br>
 
         <label>Assign To User</label>
-        <select name="assignee" style="width:100%; padding:8px;">
+        <select name="assignee" style="width:100%;margin-top: 10px; padding:8px;">
             {% for u in users %}
             <option value="{{ u.id }}">{{ u.username }}</option>
             {% endfor %}
         </select>
-
-        <button type="submit" class="btn-add">Create Task</button>
+       
+        <button type="submit" class="btn-add" style="margin-top: 15px;">Create Task</button>
         <button type="button" class="btn-add" style="background:#ccc;" onclick="toggleDrawer()">Cancel</button>
     </form>
 </div>
@@ -490,17 +506,21 @@ document.addEventListener('DOMContentLoaded', updateCounts);
 
 <script>
 function filterTasks(statusKey, element) {
-  // Remove highlight from other filters
+  // Highlight active filter
   document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
   element.classList.add('active');
 
-  // Show/hide tasks
   const rows = document.querySelectorAll('.todo-item');
   let visibleCount = 0;
 
   rows.forEach(row => {
-    const taskStatus = row.getAttribute('data-status');
-    if (statusKey === 'all' || taskStatus === statusKey) {
+    const taskStatus = row.getAttribute('data-status')
+      .trim()
+      .toLowerCase();
+
+    const filterKey = statusKey.toLowerCase();
+
+    if (filterKey === 'all' || taskStatus === filterKey) {
       row.style.display = '';
       visibleCount++;
     } else {
@@ -508,9 +528,10 @@ function filterTasks(statusKey, element) {
     }
   });
 
-  // Update "All" counter to show visible
+  // Update visible count
   document.getElementById('count-all').textContent = visibleCount;
 }
+
 </script>
 
 
@@ -617,7 +638,9 @@ function searchTasks() {
         const taskTitle = titleCell.textContent.toLowerCase();
         // Check if row matches search AND current filter
         const currentFilter = document.querySelector('.filter-option.active').getAttribute('onclick').match(/'([^']+)'/)[1];
-        const statusMatch = currentFilter === 'all' || row.dataset.status === currentFilter;
+        const statusMatch = currentFilter === 'all' || 
+            row.dataset.status.trim().toLowerCase() === currentFilter.toLowerCase();
+
 
         if (taskTitle.includes(filter) && statusMatch) {
             row.style.display = '';

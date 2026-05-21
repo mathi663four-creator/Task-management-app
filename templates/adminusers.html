@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin - User Management</title>
+
+  <!-- ✅ DataTables + CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Poppins, Arial, Helvetica, sans-serif
+    }
+
+    body {
+      margin: 0;
+      background: #e9e9eb;
+      color: #222
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh
+    }
+
+    .sidebar {
+      width: 260px;
+      background: rgb(34, 20, 114);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      height: 100vh;
+      padding: 20px;
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 30px;
+      text-align: center;
+      background-color: #fff;
+      color: #1c0ccd;
+      border-radius: 8px;
+    }
+
+    .sidebar nav a {
+      color: #e6e6e6;
+      text-decoration: none;
+      display: block;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 6px 0
+    }
+
+    .sidebar nav a:hover {
+      background: #f0efff;
+      color: black;
+    }
+
+    .sidebar .logout {
+      margin-top: auto;
+      background: #1c0ccd;
+      color: #fff;
+      text-align: center;
+    }
+
+    .sidebar .logout:hover {
+      background: #10b63f;
+      color: #fff;
+    }
+
+    .main {
+      margin-left: 270px;
+      padding: 28px;
+      flex: 1
+    }
+
+    h1 {
+      color: #5a54e3;
+      margin-top: 0
+    }
+
+    .table-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(33, 37, 78, 0.06);
+      margin-bottom: 24px;
+    }
+
+    .table-card h4 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      color: #5a54e3;
+      font-size: 18px;
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover
+    }
+
+    .actions .btn {
+      display: inline-block;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #5a54e3;
+      color: #fff;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      margin-right: 6px
+    }
+
+    .actions .btn.danger {
+      background: #e53935
+    }
+
+    @media(max-width:900px) {
+      .sidebar {
+        width: 64px;
+        padding: 12px
+      }
+
+      .main {
+        margin-left: 80px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h2>Admin Panel</h2>
+      <nav>
+        <a href="{{ url_for('admin_dashboard') }}">🏠 Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" style="background: rgba(255,255,255,0.15); color: #fff; font-weight: 600;">👥 Users</a>
+        <a href="{{ url_for('admin_tasks') }}">🗒️ Tasks</a>
+        <a href="{{ url_for('login') }}" class="logout">Logout</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <h1>User Management</h1>
+
+      <!-- Access Requests Section -->
+      <div class="table-card">
+        <h4>Pending Access Requests</h4>
+        {% if requests %}
+        <ul style="padding-left:20px; margin: 0; font-size: 15px; line-height: 1.8;">
+          {% for req in requests %}
+          <li>
+            <strong>{{ req.username }}</strong> has requested page access permissions. 
+            <a href="{{ url_for('admin_edit', user_id=req.user_id) }}" style="color: #5a54e3; font-weight: 600; text-decoration: none; margin-left: 10px;">👉 Review & Approve</a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p style="margin: 0; color: #666;">No pending access requests at this time.</p>
+        {% endif %}
+      </div>
+
+      <!-- User Table Card -->
+      <div class="table-card">
+        <h4>All Registered Users</h4>
+        <table id="userTable" class="display responsive nowrap" style="width:100%">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Profile</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>DOB</th>
+              <th>Age</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>
+                {% if u.profile_pic %}
+                  <img src="/static/uploads/{{ u.profile_pic }}" class="avatar">
+                {% else %}
+                  <img src="https://via.placeholder.com/44" class="avatar">
+                {% endif %}
+              </td>
+              <td>{{ u.username }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.mobile }}</td>
+              <td class="dob">{{ u.date_of_birth }}</td>
+              <td class="age">--</td>
+              <td>
+                <span style="padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 13px; text-transform: uppercase; background: {% if u.role == 'admin' %}#d4edda; color: #155724;{% else %}#e2e3e5; color: #383d41;{% endif %}">
+                  {{ u.role if 'role' in u.keys() else 'user' }}
+                </span>
+              </td>
+              <td class="actions">
+                <a href="{{ url_for('admin_edit', user_id=u.id) }}" class="btn">✏️ Edit</a>
+                <button class="btn danger" onclick="confirmDelete({{ u.id }})">🗑️ Delete</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- JS -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+  <script>
+    function calculateAge(dob) {
+      if (!dob) return "N/A";
+      const d = new Date(dob);
+      if (isNaN(d)) return "N/A";
+      const t = new Date();
+      let a = t.getFullYear() - d.getFullYear();
+      const m = t.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+      return a;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.dob').forEach(el => {
+        const dob = el.textContent.trim();
+        el.parentElement.querySelector('.age').textContent = calculateAge(dob);
+      });
+      $('#userTable').DataTable({
+        responsive: true,
+        pageLength: 10,
+        order: [[0, "asc"]]
+      });
+    });
+
+    function confirmDelete(id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Delete user?',
+        text: 'This user and their associated tasks will be permanently removed. This action cannot be undone!',
+        showCancelButton: true,
+        confirmButtonColor: '#e53935',
+        cancelButtonColor: '#6c63ff',
+        confirmButtonText: 'Yes, delete it'
+      }).then(r => {
+        if (r.isConfirmed) {
+          window.location.href = '/admin/delete/' + id;
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>
